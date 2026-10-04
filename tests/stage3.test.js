@@ -377,7 +377,7 @@ describe('memory — fakta, ringkasan, persistensi, dan isolasi', () => {
     const resSuccess = await triggerBackgroundSummarize({
       db,
       jid,
-      callModelFn: async () => { called = true; return { content: 'ringkasan' }; },
+      callModelFn: async (_m, o) => { called = true; o?.onSuccess?.(); return { content: 'ringkasan' }; },
       budget,
       cfg: { SUMMARY_TRIGGER_MSGS: 40, SUMMARY_BATCH_MSGS: 20, SUMMARY_MAX_WORDS: 300, SUMMARY_MIN_BUDGET_RESERVE: 1, CHARACTER_NAME: 'Chloe' },
     });

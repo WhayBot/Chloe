@@ -127,6 +127,16 @@ const config = Object.freeze({
 
   // --- worker ---
   WORKER_TICK_MS: 3000,
+  WORKER_MAX_PARALLEL: 2,           // JID berbeda yang diproses bersamaan
+  QUEUE_EXPIRE_MS: 6 * 3600 * 1000, // pesan queued lebih tua dari ini tidak dijawab
+  REGEN_MAX: 3,                     // generate ulang maksimal kalau ada pesan baru saat generate
+  WORKER_BACKOFF_MS: Object.freeze([30_000, 120_000, 600_000, 3_600_000]), // setelah habis tetap elemen terakhir
+  WORKER_FAIL_NOTICE_AT: 3,         // gagal beruntun ke-N → pesan sistem_gagal (sekali per rentetan)
+
+  // --- inbox / debounce (Tahap 4a) ---
+  DEBOUNCE_WINDOW_MS: 6000,         // pesan baru dalam jarak ini dari due_at menunda due_at
+  DEBOUNCE_EXTRA_MIN_MS: 2000,
+  DEBOUNCE_EXTRA_MAX_MS: 6000,
 
   // --- delay lognormal (SPEC §5) ---
   delay: Object.freeze({

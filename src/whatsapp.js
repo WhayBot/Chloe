@@ -800,7 +800,8 @@ export async function handleIncomingMessage(msg, allowlist, db, sock, logFn = lo
         cfg: config,
         rng,
       });
-      const r = await generateReply(assembled.messages, opts);
+      const modelOpts = { ...(isBool ? {} : opts), onSuccess: () => budget.record() };
+      const r = await generateReply(assembled.messages, modelOpts);
       outTexts = r.messages;
       source = r.model;
       actions = r.parsed?.actions ?? [];
@@ -812,8 +813,8 @@ export async function handleIncomingMessage(msg, allowlist, db, sock, logFn = lo
     }
   }
 
-  // Catat anggaran model dan naikkan penghitung user
-  budget.record();
+  // Anggaran model dicatat oleh onSuccess per HTTP 200 (jalur replyFn tanpa HTTP dicatat langsung)
+  if (customReplyFn) budget.record();
   db.bumpDailyCount(canonicalJid, dayWib);
 
   // Proses aksi jika ada (misal save_fact)
@@ -832,7 +833,7 @@ export async function handleIncomingMessage(msg, allowlist, db, sock, logFn = lo
   triggerBackgroundSummarize({
     db,
     jid: canonicalJid,
-    callModelFn: (msgs) => generateText(msgs, opts),
+    callModelFn: (msgs, o) => generateText(msgs, { ...(isBool ? {} : opts), ...o }),
     budget,
     cfg: config,
   }).catch(() => {});

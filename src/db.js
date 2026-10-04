@@ -346,6 +346,12 @@ export function openDb(dbPath) {
     getRecentMessagesByJid(jid, limit) { return stmts.getRecentMessagesByJid.all(jid, limit); },
     getQueuedByJid(jid) { return stmts.getQueuedByJid.all(jid); },
     markAnswered(jid, batchId) { stmts.markAnswered.run(batchId, jid); },
+    /** Tandai hanya pesan queued dengan id tertentu (worker: pesan baru saat generate tidak ikut terjawab). */
+    markAnsweredByIds(ids, batchId) {
+      if (!ids.length) return;
+      const q = ids.map(() => '?').join(',');
+      db.prepare(`UPDATE messages SET status = 'answered', batch_id = ? WHERE status = 'queued' AND id IN (${q})`).run(batchId, ...ids);
+    },
     hasWaId(waId) { return !!stmts.getMessageByWaId.get(waId); },
     getRecentBeforeId(jid, beforeId, limit) { return stmts.getRecentBeforeId.all(jid, beforeId, limit); },
     getMessagesAfterId(jid, afterId, limit) { return stmts.getMessagesAfterId.all(jid, afterId, limit); },

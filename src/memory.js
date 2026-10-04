@@ -239,7 +239,9 @@ export async function triggerBackgroundSummarize({
       }
     ];
 
-    const res = await callModelFn(messages);
+    // anggaran dicatat per HTTP 200 oleh callModel lewat onSuccess (bukan record manual)
+    const onSuccess = budget && typeof budget.record === 'function' ? () => budget.record() : undefined;
+    const res = await callModelFn(messages, { onSuccess });
     const content = typeof res === 'string'
       ? res
       : (res?.content ?? (Array.isArray(res?.messages) ? res.messages.join(' ') : ''));
@@ -249,9 +251,6 @@ export async function triggerBackgroundSummarize({
     }
 
     db.upsertSummary(jid, summaryText, lastMsg.id, now);
-    if (budget && typeof budget.record === 'function') {
-      budget.record();
-    }
     summaryFailedCooldown.delete(jid);
     log('info', 'memory', 'ringkasan berhasil diperbarui', {
       jid: shortJid(jid),
@@ -290,6 +289,7 @@ export function formatRecentHistory(db, jid, limit = config.HISTORY_LIMIT, befor
   const formatted = [];
   for (const m of chronological) {
     if (!m.text) continue;
+    if (m.batch_id === 'expired') continue; // pesan kedaluwarsa tidak dijawab dan tidak masuk riwayat
     const timeTag = m.ts ? `[${formatHHMM(m.ts)}] ` : '';
     const content = m.dir === 'in' ? `${timeTag}${m.text}` : m.text;
     formatted.push({
@@ -323,6 +323,7 @@ export function assemblePromptMessages({
   cfg = config,
   rng,
   deps = {},
+  incomingPreformatted = false, // true: incomingText sudah berisi awalan [HH:MM] per baris
 }) {
   const jid = user.jid;
   let facts = getFactsForPrompt(db, jid, cfg.FACTS_IN_PROMPT);
@@ -338,7 +339,7 @@ export function assemblePromptMessages({
   }
 
   const timePrefix = incomingTs ? `[${formatHHMM(incomingTs)}] ` : '';
-  const newMsg = { role: 'user', content: `${timePrefix}${incomingText}` };
+  const newMsg = { role: 'user', content: incomingPreformatted ? incomingText : `${timePrefix}${incomingText}` };
 
   // Biarkan buildSystemPrompt memilih acak 3-5 contoh di awal (jangan paksakan 5)
   let currentExamplesCount = null;

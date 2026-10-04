@@ -285,6 +285,7 @@ async function requestOnce(model, messages, { fetchFn, cfg, maxTokens, reasoning
       ok: false,
       kind: 'model',
       status: 'empty',
+      http200: true,
       error: 'konten balasan kosong',
       diagnostics,
       ms: ms(),
@@ -293,6 +294,7 @@ async function requestOnce(model, messages, { fetchFn, cfg, maxTokens, reasoning
 
   return {
     ok: true,
+    http200: true,
     status: res.status,
     content,
     servedBy: body.model,
@@ -322,6 +324,7 @@ export async function callModel(messages, opts = {}) {
     dataCollection,
     zdr,
     parseFn = (raw) => parseModelOutput(raw, cfg),
+    onSuccess, // dipanggil SETIAP HTTP 200 (pencatatan anggaran)
   } = opts;
 
   const { errors } = validateModelConfig(cfg);
@@ -349,6 +352,9 @@ export async function callModel(messages, opts = {}) {
         zdr,
       });
 
+      if (r.http200 && typeof onSuccess === 'function') {
+        try { onSuccess(); } catch (e) { logFn('warn', 'agent', `onSuccess gagal: ${e.message}`); }
+      }
 
       // Cek apakah output terpotong (finish_reason=length) dan bukan JSON utuh
       let parsed = null;
