@@ -1,0 +1,29 @@
+# Sensitif / Rahasia
+.env
+.env.*
+!.env.example
+users.json
+data/
+auth/
+node_modules/
+
+# Dokumentasi internal / laporan tahap
+docs/
+
+# File sistem & agent
+AGENT.md
+.agents/
+.gemini/
+.idea/
+.vscode/
+
+# Log & database lokal
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.db
+*.db-journal
+*.db-wal
+.DS_Store
+Thumbs.db
